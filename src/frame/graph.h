@@ -68,6 +68,20 @@ class Node {
     int input_num = 0;
     std::vector<Node*> out_nodes;
     std::string name;
+    
+/*
+#define GENEATE_OWN_CONTEXT(StartServiceContext) class StartServiceContext; \
+    static const StartServiceContext& get_const_context(GraphContext context){ \
+        (const StartServiceContext*)g_context->get_conext(#StartServiceContext); \
+     } \
+    private: \
+    static StartServiceContext& get_own_context(GraphContext context) {\
+        g_context->get_context(#StartServiceContext);\
+    }\
+    public:\
+    class  StartServiceContext : GenericContext {
+
+*/
 
 };
 
