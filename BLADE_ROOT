@@ -1,0 +1,105 @@
+def is_running_in_ci():
+    import os
+    return 'JENKINS_HOME' in os.environ
+
+def gcc_major():
+    # So that we do not have to call `gcc -dumpversion` each time we get called.
+    if not hasattr(gcc_major, "gcc_major"):
+        import subprocess
+        gcc_major.gcc_major = int(
+            subprocess.check_output(['gcc', '-dumpversion']).split('.')[0]
+        )
+
+    return gcc_major.gcc_major
+
+def first_if_gcc8(first, second):
+    return first if gcc_major() >= 8 else second
+
+global_config(
+    #native_builder = 'ninja',
+    duplicated_source_action = 'error',
+    test_timeout = 600  # 600s
+)
+
+cc_config(
+    cppflags=[
+        '-DEIGEN_USE_MKL_ALL',
+        '-D_GNU_SOURCE',
+        '-D__STDC_LIMIT_MACROS',
+        '-D_GLIBCXX_USE_CXX11_ABI=0',
+#        '-DBRPC_ENABLE_CPU_PROFILER',
+        # Not a cppflag, indeed. But this is the (seemingly?) only way to
+        # pass the flag to both C and CXX compiler.
+        '-fdiagnostics-color=always' if not is_running_in_ci() else ''
+    ],
+    warnings = [
+        '-Wall',
+        '-Wextra',
+        #'-Wno-implicit-function-declaration',
+        '-Wenum-compare',
+        '-Wno-narrowing',
+    ],
+    cflags = [
+        '-g', 
+        '-pipe',
+        '-pthread'
+    ],
+    cxxflags = [
+        '-g',
+        '-pipe',
+        '-pthread',
+        '-fpermissive',
+        '-std=c++11',
+        '-fno-omit-frame-pointer'
+    ],
+    cxx_warnings = [
+        '-Wno-deprecated-declarations'
+    ],
+    extra_incs=[
+        # for all thirdparty packages
+        './src/',
+        'thirdparty/brpc/include',
+        '/usr/local/Cellar/openssl\@1.1/1.1.1i/include/',
+        #'/usr/local/Cellar/glog/0.4.0/include/',
+        
+    ],
+    linkflags = [
+        '-L/usr/local/lib/'
+        ' -L/usr/local/Cellar/openssl\@1.1/1.1.1i/lib/',
+        #' -L/usr/local/Cellar/glog/0.4.0/lib/',
+        '-Wl,-all_load',
+        #' --whole-archive',
+        '-pthread',
+        #'-fopenmp',
+        #'-lrt',
+        '-ldl',
+        '-lz',
+        '-lm',
+        '-lssl',
+        '-lcrypto',
+        #'-lglog',
+        '-lprotobuf',
+        '-lleveldb',
+        '-lgflags',
+        '-lsnappy',
+#        '-lunwind',
+#        '-ltcmalloc_and_profiler',
+       #'-ljemalloc',
+        #hocon conf
+        ' -lcpp-hocon -lboost_system -lboost_filesystem -lboost_locale -lboost_thread -lboost_regex  -lleatherman_util -lleatherman_locale'
+        ' -framework CoreFoundation -framework CoreGraphics -framework CoreData -framework CoreText -framework Security -framework Foundation -Wl,-U,_MallocExtension_ReleaseFreeMemory -Wl,-U,_ProfilerStart -Wl,-U,_ProfilerStop -Wl,-U,_RegisterThriftProtoco '
+    ],
+    optimize = '-O2',
+)
+
+cc_test_config(
+    dynamic_link=False,
+    heap_check='',
+    gtest_libs=['thirdparty/gtest:gtest'],
+    gtest_main_libs=['thirdparty/gtest:gtest_main'],
+)
+
+#proto_library_config(
+#    protoc='thirdparty/protobuf/bin/protoc',
+#    protobuf_libs=['//thirdparty/protobuf:protobuf'],
+#)
