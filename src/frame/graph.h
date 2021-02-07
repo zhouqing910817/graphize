@@ -29,7 +29,7 @@ struct Bargs {
 };
 class Node {
     public:
-	std::shared_ptr<GenericServiceContext> context;
+	#define GET_OWN_CONTEXT() get_own_context(context, name);
     Node(const std::string& name = "") : name(name){
     }
     virtual void init(hocon::shared_config conf);
