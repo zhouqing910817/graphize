@@ -27,4 +27,21 @@
 1. brpc
 2. https://github.com/denghongcai/node-shm-cache （缓存组件）
 3. gflag
+
 。。。
+
+开发指南：
+具体详见uttest
+1. 开发普通service
+
+ 继承node类，重写init，do_service函数，其中init只在服务启动时执行一次，do_service是每次调用graph->run都会调用一次，所有的节点实例在整个进程中是单实例；init中设置的数据是进程级别的，利用宏DEFEINE_SERVICE_CONTEXT在头文件中定义请求级别数据
+ 
+ a）init中传入的配置由node_service.conf读入，key为节点名字，每个节点的必须有class参数用于指定改节点对应的类，每个节点对应一个类的实例，不同节点的class可以相同
+ 
+ b）do_service函数中开发具体逻辑，每个node类需要用SERVICE_REGISTER宏向框架注册，并用DEFEINE_SERVICE_CONTEXT宏声明一个属于自身的ServiceContext类作为请求级别数据，并通过GET_OWN_CONTEXT获取当前node对应的servicecontext对象，将当前类的输出写入到servicecontext对象中，并通过OtherNodeClassName::get_const_context(other_node_name)获取其他节点的只读servicecontext对象
+ 
+2. 开发redis service
+todo
+
+3. 开发brpc service
+todo
