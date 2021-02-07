@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 	std::cout << "start init graph" << std::endl;
 	init_graph();
-	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>();
+	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>("graph1");
 	sleep(1);
     return 0;
 }

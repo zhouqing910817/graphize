@@ -13,6 +13,13 @@ public:
     const std::string type() override {
         return "cpu";
     }
+
+public:
+	//请求级别数据
+	DEFINE_SERVICE_CONTEXT(DoneServiceContext) {
+		public:
+		DoneServiceContext(){}
+	};
 };
 } // end of namespace
 } // end of namespace

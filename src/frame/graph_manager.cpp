@@ -7,7 +7,7 @@ namespace graph_frame{
 void GraphManager::init(const std::string& file_path) {
     Node* root = nullptr;
     std::unordered_map<std::string, Node*> nodes_map;
-    auto create_service_if_not_exist = [&nodes_map](const std::string name) ->Node* {
+    auto create_service_if_not_exist = [&nodes_map](const std::string name, std::vector<std::pair<std::string, std::string>>& graph_node_vec) ->Node* {
         auto it = nodes_map.find(name);
         if (it != nodes_map.end()) {
             return it->second;
@@ -28,6 +28,7 @@ void GraphManager::init(const std::string& file_path) {
         service_node->init(node_config);
         service_node->set_name(name);
         nodes_map[name] = service_node;
+		graph_node_vec.push_back({name, clazz});
         return service_node;
     };
 	hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(file_path);
@@ -39,10 +40,11 @@ void GraphManager::init(const std::string& file_path) {
 		auto graph_conf = graph_obj->to_config();
 		const auto& node_name_vec = graph_obj->key_set();
 		Node* root = nullptr;
+		std::vector<std::pair<std::string, std::string>>& graph_node_name_vec = global_graph_node_name_vec_map[graph_name];
 		for (const auto & node_name : node_name_vec) {
 			auto graph_node_obj = graph_conf->get_object(node_name);
 			auto graph_node_conf = graph_node_obj->to_config();
-            Node* service = create_service_if_not_exist(node_name);
+            Node* service = create_service_if_not_exist(node_name, graph_node_name_vec);
             if (!service) {
                 LOG(ERROR) << "graph node name: " << node_name << " create failed";
 		    	break;
@@ -61,7 +63,7 @@ void GraphManager::init(const std::string& file_path) {
                 for (std::string& c : child_vec) {
 					if(c.empty()) continue;
                     boost::trim(c);
-                    Node* child = create_service_if_not_exist(c);
+                    Node* child = create_service_if_not_exist(c, graph_node_name_vec);
                     if (!child) {
                         continue;
                     }
@@ -89,7 +91,7 @@ void GraphManager::init(const std::string& file_path) {
                  boost::split(p_vec, parent, boost::is_any_of(","));
                  for (std::string& p : p_vec) {
                      boost::trim(p);
-                     Node* p_node = create_service_if_not_exist(p);
+                     Node* p_node = create_service_if_not_exist(p, graph_node_name_vec);
                      if(!p_node) {
                          continue;
                      }
@@ -105,6 +107,7 @@ void GraphManager::init(const std::string& file_path) {
 			}
             }
 		}
+		LOG(ERROR) << "graph:" << graph_name << " graph_node_name_vec size: " << graph_node_name_vec.size();
         graph->init(root, graph_name);
         graph_map.insert({graph_name, graph});
 	}

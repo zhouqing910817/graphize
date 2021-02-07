@@ -10,14 +10,11 @@
 #include <unordered_map>
 
 namespace graph_frame {
-    extern std::vector<std::string> global_channel_name_vec;
-}
-namespace graph_frame {
 using namespace google;
 
 class Context : public graph_frame::GraphContext {
 public:
-    Context();
+    Context(const std::string& graph_name);
     virtual ~Context();
     int Init();
 };

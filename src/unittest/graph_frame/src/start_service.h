@@ -13,7 +13,16 @@ public:
         return "cpu";
     }
 private:
+	// 进程级别数据
 	std::string func;
+
+public:
+	//请求级别数据
+	DEFINE_SERVICE_CONTEXT(StartServiceContext) {
+		public:
+		StartServiceContext(){};
+		std::string request_id;
+	};
 };
 } // end of namespace
 } // end of namespace

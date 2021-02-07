@@ -7,6 +7,7 @@
 #include "bthread/bthread.h"
 #include "bthread/id.h"
 #include  <queue>
+#include <typeinfo>
 #include <vector>
 #include <set>
 #include <brpc/channel.h>
@@ -15,9 +16,11 @@
 #include "frame/register.h"
 #include "common/context.h"
 #include <hocon/config.hpp>
+
 namespace graph_frame {
 DECLARE_bool(run_graph_debug);
 class Node;
+
 struct Bargs {
     Bargs(Node* n, std::shared_ptr<graph_frame::Context> ctx) : node(n), context(ctx) {
     }
@@ -26,6 +29,7 @@ struct Bargs {
 };
 class Node {
     public:
+	std::shared_ptr<GenericServiceContext> context;
     Node(const std::string& name = "") : name(name){
     }
     virtual void init(hocon::shared_config conf);
@@ -67,21 +71,9 @@ class Node {
     private:
     int input_num = 0;
     std::vector<Node*> out_nodes;
+	public:
     std::string name;
     
-/*
-#define GENEATE_OWN_CONTEXT(StartServiceContext) class StartServiceContext; \
-    static const StartServiceContext& get_const_context(GraphContext context){ \
-        (const StartServiceContext*)g_context->get_conext(#StartServiceContext); \
-     } \
-    private: \
-    static StartServiceContext& get_own_context(GraphContext context) {\
-        g_context->get_context(#StartServiceContext);\
-    }\
-    public:\
-    class  StartServiceContext : GenericContext {
-
-*/
 
 };
 
@@ -150,4 +142,17 @@ class Graph {
       return 0;
   }
 };
+#define DEFINE_SERVICE_CONTEXT(ChildServiceContext) class ChildServiceContext; \
+	public: \
+    static const ChildServiceContext* get_const_context(std::shared_ptr<graph_frame::GraphContext> g_context, const std::string& node_name){ \
+        return (const ChildServiceContext*)(g_context->get_context(node_name).get()); \
+     } \
+    private: \
+    static ChildServiceContext* get_own_context(std::shared_ptr<graph_frame::GraphContext> g_context, const std::string& node_name) {\
+		auto cxt = g_context->get_context(node_name); \
+		/* LOG(ERROR) << "node_name:" << node_name << " get context: " << cxt.get() << "type: " << typeid(*cxt).name();*/\
+        return (ChildServiceContext*)(cxt.get());\
+    }\
+    public:\
+    class  ChildServiceContext : public graph_frame::GenericServiceContext 
 } // end of namespace vv::frame

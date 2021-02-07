@@ -25,6 +25,6 @@ public:
 };
 TEST_F(GraphUt,test_run_graph)   //此时使用的是TEST_F宏
 {
-	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>();
+	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>("graph1");
 	sleep(1);
 }
