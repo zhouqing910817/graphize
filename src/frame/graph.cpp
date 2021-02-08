@@ -11,8 +11,6 @@ static void* b_func(void * args_tmp) {
     delete args;
     return nullptr;
 }
-void Node::init(hocon::shared_config conf) {
-}
 void Node::run(std::shared_ptr<graph_frame::Context> context) {
     if (!skip(context)) {
 	    if (FLAGS_run_graph_debug) {

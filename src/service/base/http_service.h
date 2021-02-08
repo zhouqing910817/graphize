@@ -1,8 +1,8 @@
 #pragma once
 #include <memory>
 #include <functional>
-#include "service/base_service/http_service.h"
-#include "service/base_service/brpc_service.h"
+#include "service/base/http_service.h"
+#include "service/base/brpc_service.h"
 #include "frame/gtransport_manager.h"
 #include <brpc/channel.h>
 #include "brpc/callback.h"

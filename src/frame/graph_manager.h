@@ -14,7 +14,7 @@ public:
         return inst;
     }
 
-    void init(const std::string& conf_path);
+    bool init(const std::string& conf_path);
     std::shared_ptr<Graph> get_graph(const std::string& topo_name);
 private:
     Node* create_service(const std::string name);

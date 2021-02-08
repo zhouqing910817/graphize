@@ -4,7 +4,7 @@
 #include <boost/algorithm/string.hpp>
 #include <hocon/config.hpp>
 namespace graph_frame{
-void GraphManager::init(const std::string& file_path) {
+bool GraphManager::init(const std::string& file_path) {
     Node* root = nullptr;
     std::unordered_map<std::string, Node*> nodes_map;
     auto create_service_if_not_exist = [&nodes_map](const std::string name, std::vector<std::pair<std::string, std::string>>& graph_node_vec) ->Node* {
@@ -50,6 +50,13 @@ void GraphManager::init(const std::string& file_path) {
 		    	break;
             }
 			const auto& graph_node_attrs = graph_node_obj->key_set();
+			bool is_root = false;
+			if (std::find(graph_node_attrs.begin(), graph_node_attrs.end(), "root") != graph_node_attrs.end()) {
+			    is_root = graph_node_conf->get_bool("root");
+			}
+			if (is_root) {
+				root = service;
+			}
 			// parse children
             {
 			std::string children = "";
@@ -67,7 +74,10 @@ void GraphManager::init(const std::string& file_path) {
                     if (!child) {
                         continue;
                     }
-                    service->add_output(child);
+					const auto & output_nodes = service->get_output_nodes();
+					if (std::find(output_nodes.begin(), output_nodes.end(),child) == output_nodes.end()) {
+                        service->add_output(child);
+					}
                 }
             }
             }
@@ -77,13 +87,6 @@ void GraphManager::init(const std::string& file_path) {
 			std::string parent = "";
 			if (std::find(graph_node_attrs.begin(), graph_node_attrs.end(), "parents") != graph_node_attrs.end()) {
 			    parent = graph_node_conf->get_string("parents");
-			} else {
-				// node which has no parents is root just one root is allowed
-				if (!root) {
-				    root = service;
-				} else {
-					LOG(ERROR) << "graph:" << graph_name <<  " found two root, just one root is allowed, node_name: " << node_name;
-				}
 			}
             boost::trim(parent);
             if (!parent.empty()) {
@@ -95,27 +98,30 @@ void GraphManager::init(const std::string& file_path) {
                      if(!p_node) {
                          continue;
                      }
-                     p_node->add_output(service);
+					 const auto& output_nodes = p_node->get_output_nodes();
+					 if (std::find(output_nodes.begin(), output_nodes.end(), service) == output_nodes.end()) {
+                         p_node->add_output(service);
+				     }
                  }
-            } else {
-			   // node which has no parents is root, just one root is allowed
-				if (!root) {
-				    root = service;
-				} else if (root != service){
-					LOG(ERROR) << "graph:" << graph_name <<  " found two root, just one root is allowed, node_name: " << node_name;
-				}
-			}
+            }
             }
 		}
 		LOG(ERROR) << "graph:" << graph_name << " graph_node_name_vec size: " << graph_node_name_vec.size();
-        graph->init(root, graph_name);
-        graph_map.insert({graph_name, graph});
+        auto ret = graph->init(root, graph_name);
+		if (ret == 0) {
+            graph_map.insert({graph_name, graph});
+			return true;
+		} else {
+			LOG(FATAL) << "init " << graph_name << " failed, it's not a DAG";
+			return false;
+		}
 	}
 }
 
 std::shared_ptr<Graph> GraphManager::get_graph(const std::string& topo_name) {
     auto it = graph_map.find(topo_name);
     if (it == graph_map.end()) {
+		LOG(FATAL) << "graph: " << topo_name << " not found";
         return std::shared_ptr<Graph>();
     } else {
         return it->second;

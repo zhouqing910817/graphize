@@ -16,7 +16,7 @@ public:
         return inst;
     }
 
-    void init(const std::string& file_path);
+    bool init(const std::string& file_path);
     hocon::shared_config get_node_info(const std::string& node_name) {
         auto it = nodes_map.find(node_name);
         if (it != nodes_map.end()) {

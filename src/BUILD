@@ -16,10 +16,11 @@ cc_library(
             'frame/*.cpp',
             'common/*.cpp',
             'service/*.cpp',
-            'service/base_service/*.cpp',
+            'service/base/*.cpp',
 
             # ut src
             'unittest/graph_frame/src/*.cpp',
+            'unittest/redis_service/src/*.cpp',
         ]),
         deps = [
                 '//thirdparty/brpc:brpc',
@@ -31,6 +32,7 @@ cc_test(
     srcs = glob([
             #'unittest/test_main.cpp',
             'unittest/graph_frame/graph_test.cpp',
+            #'unittest/redis_service/redis_test.cpp',
     ]),
     deps = [
             ':frame',

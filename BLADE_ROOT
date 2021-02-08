@@ -89,7 +89,7 @@ cc_config(
         ' -lcpp-hocon -lboost_system -lboost_filesystem -lboost_locale -lboost_thread -lboost_regex  -lleatherman_util -lleatherman_locale'
         ' -framework CoreFoundation -framework CoreGraphics -framework CoreData -framework CoreText -framework Security -framework Foundation -Wl,-U,_MallocExtension_ReleaseFreeMemory -Wl,-U,_ProfilerStart -Wl,-U,_ProfilerStop -Wl,-U,_RegisterThriftProtoco '
     ],
-    optimize = '-O0',
+    optimize = '-O2',
 )
 
 cc_test_config(

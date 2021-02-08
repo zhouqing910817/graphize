@@ -1,4 +1,4 @@
-#include "service/base_service/redis_service.h"
+#include "service/base/redis_service.h"
 #include "common/context.h"
 #include <google/protobuf/util/json_util.h>
 #include "butil/third_party/snappy/snappy.h"
@@ -9,24 +9,12 @@
 #include "frame/client/redis/redis_client_manager.h"
 
 namespace graph_frame {
-int REDIS_CLIENT = 0;
-int ARESKV_CLIENT = 1;
-void RedisService::init_fetcher_info() {
-}
-void RedisService::init_fetcher_info(std::shared_ptr<Context> context) {
-}
-void RedisService::init(std::shared_ptr<Context> context) {
-    register_key_generator();
-    register_response_processor();
-    init_fetcher_info();
-    init_fetcher_info(context);
-}
 
-void RedisService::register_key_generator() {
-    register_key_func("imei", [](std::shared_ptr<Context> context, std::vector<std::string>& keys, const std::string& prefix, const std::string& postfix) -> int {
-        return 0;
-    });
-}
+// void RedisService::register_key_generator() {
+//     register_key_func("", [](std::shared_ptr<Context> context, std::vector<std::string>& keys, const std::string& prefix, const std::string& postfix) -> int {
+//         return 0;
+//     });
+// }
 std::shared_ptr<std::string> RedisService::make_redis_value(const std::string& key, std::shared_ptr<Context> context) {
     return std::shared_ptr<std::string>();
 }
@@ -48,51 +36,47 @@ void RedisService::make_up_fetch_info_vec(std::shared_ptr<Context> context, std:
         // get from cache first if needed
         if (fetch_info.use_cache) {
             auto miss_keys_ptr = get_from_cache(keys, redis_result->cache_data_vec, fetch_info_vec[i]);
-            std::cout << "[cache]" << "prefix:" << prefix << ", ratio:" << 1 - (miss_keys_ptr->size() / static_cast<float>(keys.size()));
-            // <<  " miss_keys_size:" << miss_keys_ptr->size() << " keys_size:" << keys.size();
-            // if (!miss_keys_ptr || miss_keys_ptr->size() <= 0) {
-            //     continue;
-            // }
+            std::cout << "[cache]" << "prefix:" << prefix << ", ratio:" << 1 - (miss_keys_ptr->size() / static_cast<float>(keys.size()))
+                <<  " miss_keys_size:" << miss_keys_ptr->size() << " keys_size:" << keys.size();
+            if (!miss_keys_ptr || miss_keys_ptr->size() <= 0) {
+                continue;
+            }
             keys = std::move(*miss_keys_ptr);
         }
         if (keys.size() == 0) continue;
-        if (fetch_info.client_type == REDIS_CLIENT) {
-            auto new_redis_client = redis_client::RedisClientManager::instance().get_client(fetch_info.redis_client_id);
-            if (!new_redis_client) {
-                std::cout << ", cant find name : [" << fetch_info.redis_client_id << "] in RedisClientManager";
+        auto new_redis_client = redis_client::RedisClientManager::instance().get_client(fetch_info.redis_client_id);
+        if (!new_redis_client) {
+            std::cout << ", cant find name : [" << fetch_info.redis_client_id << "] in RedisClientManager";
+            continue;
+        }
+        std::unordered_map<size_t, std::vector<std::string>> slot_keys_map;
+        for (auto& key : keys) {
+            size_t slot = new_redis_client->get_cur_channel_pool()->GetKeySlot(key.c_str(), key.size());
+            slot_keys_map[slot].push_back(key);
+        }
+        // std::cout << "slot_keys_map size: " << slot_keys_map.size() << " slot: " << slot_keys_map.begin()->first;
+        auto begin_it = slot_keys_map.begin();
+        for (auto it = slot_keys_map.begin(); it != slot_keys_map.end(); ++it) {
+            // std::cout << "slot_index:" << it->first << " keys size: " << it->second.size();
+            if (begin_it == it) {
+                // first element
+                fetch_info.keys = std::move(it->second);
                 continue;
             }
-            // notice
-            std::unordered_map<size_t, std::vector<std::string>> slot_keys_map;
-            for (auto& key : keys) {
-                size_t slot = new_redis_client->get_cur_channel_pool()->GetKeySlot(key.c_str(), key.size());
-                slot_keys_map[slot].push_back(key);
-            }
-            std::cout << "slot_keys_map size: " << slot_keys_map.size() << " slot: " << slot_keys_map.begin()->first;
-            auto begin_it = slot_keys_map.begin();
-            for (auto it = slot_keys_map.begin(); it != slot_keys_map.end(); ++it) {
-                // std::cout << "slot_index:" << it->first << " keys size: " << it->second.size();
-                if (begin_it == it) {
-                    // first element
-                    fetch_info.keys = std::move(it->second);
-                    continue;
-                }
-                // std::cout << "add fetch_info, " << "prefix:" << fetch_info.prefix << " redis_client_id: " << fetch_info.redis_client_id
-                // << " key size: " << it->second.size();
-                FetchInfo add_fetch_info;
-                add_fetch_info.prefix = fetch_info.prefix;
-                add_fetch_info.postfix = fetch_info.postfix;
-                add_fetch_info.compress = fetch_info.compress;
-                add_fetch_info.type = fetch_info.type;
-                add_fetch_info.redis_client_id = fetch_info.redis_client_id;
-                add_fetch_info.key = fetch_info.key;
-                add_fetch_info.response_type = fetch_info.response_type;
-                add_fetch_info.use_cache = fetch_info.use_cache;
-                add_fetch_info.expire_time = fetch_info.expire_time;
-                add_fetch_info.client_type = fetch_info.client_type;
-                add_fetch_info.keys = std::move(it->second);
-                add_fetch_info_vec.push_back(std::move(add_fetch_info));
-            }
+            // std::cout << "add fetch_info, " << "prefix:" << fetch_info.prefix << " redis_client_id: " << fetch_info.redis_client_id
+            // << " key size: " << it->second.size();
+            FetchInfo add_fetch_info;
+            add_fetch_info.prefix = fetch_info.prefix;
+            add_fetch_info.postfix = fetch_info.postfix;
+            add_fetch_info.compress = fetch_info.compress;
+            add_fetch_info.type = fetch_info.type;
+            add_fetch_info.redis_client_id = fetch_info.redis_client_id;
+            add_fetch_info.key = fetch_info.key;
+            add_fetch_info.response_type = fetch_info.response_type;
+            add_fetch_info.use_cache = fetch_info.use_cache;
+            add_fetch_info.expire_time = fetch_info.expire_time;
+            add_fetch_info.keys = std::move(it->second);
+            add_fetch_info_vec.push_back(std::move(add_fetch_info));
         }
     }
     for (auto& add_fetch_info : add_fetch_info_vec) {
@@ -105,7 +89,6 @@ void RedisService::make_up_fetch_info_vec(std::shared_ptr<Context> context, std:
 }
 int RedisService::do_service(std::shared_ptr<Context> context) {
     auto start_time_ms = butil::gettimeofday_us();
-    init(context);
     auto redis_result = std::make_shared<RedisResult>();
     redis_result->start_time_ms = start_time_ms;
     if (fetch_info_vec.size() <= 0) {
@@ -189,6 +172,7 @@ int RedisService::do_service(std::shared_ptr<Context> context) {
             if (old_item_size == 1) {
                 old = cond->fetch_sub(1);
             }
+			// to do parse cached redis data
             if (old == 1 && old_item_size == 1) {
                 redis_result->end_rpc_time = butil::gettimeofday_us();
                 redis_result->total_rpc_time = redis_result->end_rpc_time - redis_result->start_rpc_time;
@@ -224,15 +208,13 @@ int RedisService::do_service(std::shared_ptr<Context> context) {
                         redis_result_item.code = RedisResultItem::RPC_FAILED;
                         std::cout << ", " << error_ss.str();
                     }
-                    std::cout << "cntl_latency_us: " << cntl_ptr->latency_us() << " reply_size:" << (response == nullptr ? 0 : response->reply(0).size());
+                    // std::cout << "cntl_latency_us: " << cntl_ptr->latency_us() << " reply_size:" << (response == nullptr ? 0 : response->reply(0).size());
                     if (enable_paral_parse) {
                         int64_t lat = 0;
                         if (cntl_ptr != nullptr) {
                             lat = cntl_ptr->latency_us();
                         }
-                        this->parse_redis_response(prefix, fetch_info.compress, response,
-                            RedisRpcStatus(i, key, lat, redis_result_item.code),
-                            context);
+                        this->parse_redis_response(prefix, i / step, redis_result_item, context);
                     }
                     deep_cond_finish_func();
                 } catch (const std::exception& e) {
@@ -249,7 +231,6 @@ int RedisService::do_service(std::shared_ptr<Context> context) {
             }
             bool use_new_redis_client = false;
             if (!enable_multi_get) {
-                // use new client first
                 ret = new_redis_client->fetch(context, key, callback);
             } else {
                 // std::cout << "start_index: " << i << " end_index:" << i + step;
@@ -329,34 +310,35 @@ void RedisService::check_suc_rpc_response(std::shared_ptr<graph_frame::Context> 
         redis_result_item.result_guard = response;
     }
 }
-void RedisService::parse_redis_response(const std::string& prefix, const std::string& compress,
-    std::shared_ptr<brpc::RedisResponse> content_response, RedisRpcStatus status,
-    std::shared_ptr<Context> context) {
-        if (content_response) {
-            if (compress == "snappy") {
-                std::string uncompress_data_str = "";
-                uncompress_data_str.reserve(content_response->reply(0).data().size() * 6); // snappy compress ratio is 22%, so mutilpy by 6
-                auto ok = butil::snappy::Uncompress(content_response->reply(0).data().data(), content_response->reply(0).data().size(),
-                    &uncompress_data_str);
-                auto parse_func = get_parse_func(prefix);
-                auto suc = parse_func(uncompress_data_str.c_str(), uncompress_data_str.size(), context, status);
-                if (!suc) {
-                    std::cout << "parse redis response to message failed; redis prefix: [" << prefix << status.key <<  "] uncompress ok: " << ok;
-                }
-            } else {
-                auto parse_func = get_parse_func(prefix);
-                auto suc = parse_func(content_response->reply(0).data().data(), content_response->reply(0).data().size(), context, status);
-                if (!suc) {
-                    std::cout << "parse redis response to message failed; redis prefix: [" << prefix << "]";
-                } else {
-                    std::cout << "parse redis suc; prefix:" << prefix;
-                }
-            }
-        } else {
-            // std::cout << "redis prefix: [" << prefix << "] get nullptr response, timeout or response is nil";
+void RedisService::parse_redis_response(const std::string& prefix, int index, const RedisResultItem& redis_item, std::shared_ptr<Context> context) {
+    if (redis_item.fetch_info_ptr->compress == "snappy") {
+		for (size_t i = 0; i < redis_item.result_str_vec.size(); ++i) {
+			const char* result_str = redis_item.result_str_vec[i];
+			auto result_str_len = redis_item.result_str_len_vec[i];
+            std::string uncompress_data_str = "";
+            uncompress_data_str.reserve(result_str_len * 6); // snappy compress ratio is 22%, so mutilpy by 6
+            auto ok = butil::snappy::Uncompress(result_str, result_str_len, &uncompress_data_str);
             auto parse_func = get_parse_func(prefix);
-            auto suc = parse_func("", 0, context, status);
-        }
+            auto suc = parse_func(uncompress_data_str.c_str(), uncompress_data_str.size(), context, redis_item.fetch_info_ptr);
+            if (!suc) {
+                const std::string& key = redis_item.fetch_info_ptr->keys.at(redis_item.start_index + i);
+                std::cout << "parse redis response to message failed; redis prefix: [" << prefix << "] key:[" << key <<"] uncompress ok: " << ok;
+            }
+		}
+    } else {
+		for (size_t i = 0; i < redis_item.result_str_vec.size(); ++i) {
+			const char* result_str = redis_item.result_str_vec[i];
+			auto result_str_len = redis_item.result_str_len_vec[i];
+            auto parse_func = get_parse_func(prefix);
+            auto suc = parse_func(result_str, result_str_len, context, redis_item.fetch_info_ptr);
+            if (!suc) {
+                const std::string& key = redis_item.fetch_info_ptr->keys.at(redis_item.start_index + i);
+                std::cout << "parse redis response to message failed; redis prefix: [" << prefix << "] key:[" << key << "]";
+            } else {
+                std::cout << "parse redis suc; prefix:" << prefix;
+            }
+		}
+    }
 }
 
 std::shared_ptr<std::vector<std::string>> RedisService::get_from_cache(std::vector<std::string>& keys, std::vector<CacheDataItem>& cache_data_vec, std::shared_ptr<const FetchInfo> fetch_info_ptr) {

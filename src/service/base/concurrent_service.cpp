@@ -1,4 +1,4 @@
-#include "service/base_service/concurrent_service.h"
+#include "service/base/concurrent_service.h"
 #include "butil/time.h"
 #include "bthread/id.h"
 #include "common/context.h"

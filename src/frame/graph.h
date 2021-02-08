@@ -32,10 +32,11 @@ class Node {
 	#define GET_OWN_CONTEXT() get_own_context(context, name);
     Node(const std::string& name = "") : name(name){
     }
-    virtual void init(hocon::shared_config conf);
-    void run(std::shared_ptr<graph_frame::Context> context);
     virtual int do_service(std::shared_ptr<graph_frame::Context> context);
     virtual bool skip(std::shared_ptr<graph_frame::Context> context);
+    virtual void init(hocon::shared_config conf) = 0;
+
+    void run(std::shared_ptr<graph_frame::Context> context);
     bool notify(std::shared_ptr<graph_frame::Context> context);
 
     const std::vector<Node*>& get_output_nodes() {
@@ -51,6 +52,7 @@ class Node {
 
     void add_output(Node * node) {
         out_nodes.push_back(node);
+		node->input_num_4_check++;
         node->incr_input_num();
     }
     size_t get_out_nodes_size() {
@@ -68,6 +70,7 @@ class Node {
     virtual const std::string type() {
         return "cpu";
     }
+	int input_num_4_check = 0;
     private:
     int input_num = 0;
     std::vector<Node*> out_nodes;
@@ -106,19 +109,70 @@ class Graph {
       std::queue<Node*> q;
       q.push(cur_node);
       std::set<Node*> set;
+	  std::stringstream ss;
+      ss << "/********* graph: " << name << " *********/" << std::endl;
       while(!q.empty()) {
           cur_node = q.front();
           q.pop();
           if (set.find(cur_node) == set.end()) {
               set.insert(cur_node);
               all_nodes.push_back(cur_node);
-          }
+          } else {
+		      continue;
+		  }
+		  if (cur_node->get_output_nodes().size() == 0) {
+		      ss << cur_node->get_name() << " => NIL" << std::endl;
+		  }
           for (auto node : cur_node->get_output_nodes()) {
+		      ss << cur_node->get_name() << " => " << node->get_name() << std::endl;
               q.push(node);
           }
       }
-      std::cout <<"graph: " << name << " all_nodes size: " << all_nodes.size() << std::endl;
-      return 0;
+	  ss << "/********* graph: " << name << " end *********/" << std::endl;
+      LOG(ERROR) <<"graph: " << name << " all_nodes size: " << all_nodes.size();
+	  LOG(ERROR) << ss.str();
+      bool valid = check();
+	  if (valid) {
+		  return 0;
+	  } else {
+          return -1;
+	  }
+  }
+  bool check() {
+	  std::unordered_map<Node*, bool> del_flag_map;
+	  for(auto* node : all_nodes) {
+		 del_flag_map[node] = false;
+	  }
+	  std::list<Node*> zero_input_node;
+	  if (root_node && root_node->input_num_4_check == 0) {
+	      zero_input_node.push_back(root_node);
+	  } else {
+		  LOG(FATAL) << "root node is nullptr or input_num != 0";
+		  return false;
+	  }
+	  while(zero_input_node.size() > 0) {
+	      auto r = zero_input_node.front();
+		  zero_input_node.pop_front();
+		  del_flag_map[r] = true; // delete node whose input_num = 0
+		  for (auto * n : r->get_output_nodes()) {
+		      n->input_num_4_check--;
+			  if (n->input_num_4_check == 0) {
+				  zero_input_node.push_back(n);
+			  }
+		  }
+	  }
+	  std::stringstream ss;
+	  for (auto pair : del_flag_map) {
+          if (pair.second == false) {
+			  ss << pair.first->get_name() << ", ";
+		  }
+	  }
+	  std::string cycle_dependcy_nodes_str = ss.str();
+	  if (cycle_dependcy_nodes_str.size() > 0) {
+		  LOG(FATAL) << "[" << cycle_dependcy_nodes_str.substr(0, cycle_dependcy_nodes_str.size() - 2) << "] has cycle dependcy";
+		  return false;
+	  }
+	  return true;
   }
   template<typename Context, class... Args>
   int run(Args... args) {

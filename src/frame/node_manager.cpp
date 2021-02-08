@@ -7,7 +7,7 @@
 #include <algorithm>
 
 namespace graph_frame {
-void NodeManager::init(const std::string& file_path) {
+bool NodeManager::init(const std::string& file_path) {
 	hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(file_path);
 	hocon::shared_object root_obj = root_conf->root();
 	const auto& node_name_vec = root_obj->key_set();
@@ -25,13 +25,16 @@ void NodeManager::init(const std::string& file_path) {
             LOG(ERROR) << "node: " << node_name << " already exists";
         } else {
             nodes_map[node_name] = node_conf;
+			LOG(ERROR) << "create node: " << node_name;
         }
         if (!downstream.empty()) {
             if (!GtransportManager::instance().get_transport(downstream) && !redis_client::RedisClientManager::instance().get_client(downstream)) {
                 LOG(ERROR) << "conf error !! transport_name:" << downstream << " not exist in gtransport and redis client";
                 std::cout << "conf error !! transport_name:" << downstream << " not exist in gtransport and redis client" << std::endl;
+				return false;
             }
         }
 	}
+    return true;
 }
 } // end of namespace graph_frame
