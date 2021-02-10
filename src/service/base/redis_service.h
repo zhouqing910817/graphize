@@ -11,10 +11,10 @@ struct FetchInfo {
     std::string prefix;
     std::string postfix;
     std::string compress;
-    std::string type;
+    std::string key_gen_func;
     std::string redis_client_id;
     std::string key;
-    std::string response_type;
+    std::string response_func;
     bool use_cache = false;
     uint64_t expire_time = 0;
     
@@ -70,7 +70,7 @@ class RedisResult {
     void merge_cache_data();
 };
 typedef std::function<int(std::shared_ptr<Context>,  std::vector<std::string>&, const std::string&, const std::string&)> RedisKeyGenFunc;
-typedef std::function<int(const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>)> RedisDataParseFunc;
+typedef std::function<int(const std::string&, const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>)> RedisDataParseFunc;
 class RedisService : public Node {
   public:
   public:
@@ -83,18 +83,18 @@ class RedisService : public Node {
     const std::string type() override {
         return "io";
     }
-    void register_key_func(const std::string& type, RedisKeyGenFunc func) {
-        key_func_map.insert({type, func});
+    void register_key_func(const std::string& key_gen_func, RedisKeyGenFunc func) {
+        key_func_map.insert({key_gen_func, func});
     }
-    void register_parse_func(const std::string& prefix, RedisDataParseFunc func) {
-        parse_func_map.insert({prefix, func});
+    void register_parse_func(const std::string& response_func, RedisDataParseFunc func) {
+        parse_func_map.insert({response_func, func});
     }
-    RedisDataParseFunc & get_parse_func(const std::string& prefix) {
-        auto it = parse_func_map.find(prefix);
+    RedisDataParseFunc & get_parse_func(const std::string& response_func) {
+        auto it = parse_func_map.find(response_func);
         if (it != parse_func_map.end()) {
             return it->second;
         }
-        static RedisDataParseFunc default_func = [](const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>){return 1;};
+        static RedisDataParseFunc default_func = [](const std::string&,const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>){return 1;};
         return default_func;
     }
     void check_suc_rpc_response(std::shared_ptr<graph_frame::Context> context, std::shared_ptr<brpc::RedisResponse>& response,
@@ -113,7 +113,7 @@ public:
     bool enable_paral_parse = true;
 
     bool enable_multi_get = true;
-    int batch_size = 100;
+    int batch_size = 2;
 };
 } // end of namespace graph_frame
 

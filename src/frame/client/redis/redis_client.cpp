@@ -143,8 +143,11 @@ void RedisClient::init_channel_pool(std::shared_ptr<ChannelPool> channel_pool) {
     // do clear
     channel_pool->valid_lines.clear();
     std::string s = std::string(response.reply(0).data().data(), response.reply(0).data().size());
+    boost::trim(s);
     LOG(ERROR) << "response size: " << response.reply(0).data().size();
+	LOG(ERROR) << "cluster nodes str: \n" << s;
     boost::split(vlines, s, boost::is_any_of("\n"), boost::token_compress_on);
+	LOG(ERROR) << "vlines size: " << vlines.size();
     std::vector<NodeInfo> vNodes;
     for (size_t i= 0; i < vlines.size(); ++i) {
         NodeInfo node;
@@ -181,8 +184,11 @@ void RedisClient::init_channel_pool(std::shared_ptr<ChannelPool> channel_pool) {
     int32_t cnt = vNodes.size();
 
     if(channel_pool->m_channel_list.size() != cnt)channel_pool->m_channel_list.resize(cnt);
-
+    LOG(ERROR) << "vnodes size: " << cnt;
     for (int32_t i = 0; i < cnt; ++i) {
+		if (vNodes[i].ip.empty() && vNodes[i].port > 0) {
+			vNodes[i].ip = "127.0.0.1";
+		}
         InitChannel(i, vNodes[i].ip, vNodes[i].port, _pool_size, _time_out, "", channel_pool->m_channel_list);
     }
 }
@@ -191,7 +197,7 @@ bool RedisClient::InitChannel(int32_t idx, const std::string &host,
                         uint32_t port, uint32_t poolsize, int64_t time_out, const std::string& load_balancer,
                         std::vector<std::shared_ptr<ConnectPool<brpc::Channel>>>& m_channel_list) {
     if (host.empty()) {
-        LOG(ERROR) << "Error Host" << host;
+        LOG(ERROR) << "Error Host:" << host << " port: " << port;
         return false;
     }
 

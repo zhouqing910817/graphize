@@ -31,8 +31,8 @@ cc_test(
     name = 'graph_ut',
     srcs = glob([
             #'unittest/test_main.cpp',
-            'unittest/graph_frame/graph_test.cpp',
-            #'unittest/redis_service/redis_test.cpp',
+            # 'unittest/graph_frame/graph_test.cpp',
+            'unittest/redis_service/redis_test.cpp',
     ]),
     deps = [
             ':frame',

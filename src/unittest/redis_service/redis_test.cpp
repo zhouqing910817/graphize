@@ -4,6 +4,7 @@
 #include "frame/graph.h"
 #include "frame/register.h"
 #include "common/context.h"
+#include "frame/client/redis/redis_client_manager.h"
 namespace {
 class RedisServiceUt:public testing::Test
 {
@@ -11,6 +12,7 @@ public:
     //添加日志
     static void SetUpTestCase()
     {
+		redis_client::RedisClientManager::instance().init("src/unittest/redis_service/conf/redis_client.conf");
 	    graph_frame::NodeManager::instance().init("src/unittest/redis_service/conf/node_service.conf");
 	    graph_frame::GraphManager::instance().init("src/unittest/redis_service/conf/graph.conf");
     }
