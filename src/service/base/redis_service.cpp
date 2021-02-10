@@ -15,6 +15,21 @@ namespace graph_frame {
 //         return 0;
 //     });
 // }
+void RedisService::init(hocon::shared_config conf) {
+	auto fetch_info_obj_list = conf->get_object_list("fetch_infos");
+	for (auto fetch_info_obj : fetch_info_obj_list) {
+        auto fetch_info_conf = fetch_info_obj->to_config();
+	    FetchInfo fetch_info;
+        fetch_info.prefix = fetch_info_conf->get_string("prefix");
+        fetch_info.postfix = fetch_info_conf->get_string("postfix");
+        fetch_info.redis_client_id = fetch_info_conf->get_string("redis_client_id");
+        fetch_info.key_gen_func = fetch_info_conf->get_string("key_gen_func");
+        fetch_info.response_func = fetch_info_conf->get_string("response_func");
+        fetch_info.compress = fetch_info_conf->get_string("compress");
+        fetch_info_vec.push_back(std::make_shared<const FetchInfo>(std::move(fetch_info)));
+	}
+	init_redis_conf(conf);
+}
 std::shared_ptr<std::string> RedisService::make_redis_value(const std::string& key, std::shared_ptr<Context> context) {
     return std::shared_ptr<std::string>();
 }
@@ -29,7 +44,7 @@ void RedisService::make_up_fetch_info_vec(std::shared_ptr<Context> context, std:
         if (key_func_it != key_func_map.end()) {
             key_func_it->second(context, keys, prefix, postfix);
         } else {
-            LOG(ERROR) << ", not exist key_gen_func: " << fetch_info.key_gen_func << " in key_func_map";
+            LOG(ERROR) << "not exist key_gen_func: " << fetch_info.key_gen_func << " in key_func_map";
             continue;
         }
         if (keys.size() == 0) continue;
@@ -136,7 +151,7 @@ int RedisService::do_service(std::shared_ptr<Context> context) {
         std::shared_ptr<redis_client::RedisClient> new_redis_client;
         new_redis_client = redis_client::RedisClientManager::instance().get_client(fetch_info.redis_client_id);
         if (!new_redis_client) {
-            LOG(ERROR) << ", cant find redis client name : [" << fetch_info.redis_client_id << "] in RedisClientManager";
+            LOG(ERROR) << "can't find redis client name : [" << fetch_info.redis_client_id << "] in RedisClientManager";
             cond_finish_func();
             continue;
         }

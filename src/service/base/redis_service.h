@@ -74,6 +74,8 @@ typedef std::function<int(const std::string&, const char*, size_t, std::shared_p
 class RedisService : public Node {
   public:
   public:
+    void init(hocon::shared_config conf) override;
+	virtual void init_redis_conf(hocon::shared_config conf) = 0;
     int do_service(std::shared_ptr<Context> context) override;
     // 子类需要实现的函数
     virtual void process_response(std::shared_ptr<Context> context, const RedisResult& redis_result);
