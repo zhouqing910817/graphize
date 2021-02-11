@@ -12,8 +12,8 @@ public:
     //添加日志
     static void SetUpTestCase()
     {
-	    init_node_suc = graph_frame::NodeManager::instance().init("./src/unittest/graph_frame/conf/node_service.conf");
-	    init_graph_suc = graph_frame::GraphManager::instance().init("./src/unittest/graph_frame/conf/graph.conf");
+	    init_node_suc = graph_frame::NodeManager::instance().init("unittest/graph_frame/conf/node_service.conf");
+	    init_graph_suc = graph_frame::GraphManager::instance().init("unittest/graph_frame/conf/graph.conf");
     }
     static void TearDownTestCase()
     {

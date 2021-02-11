@@ -72,7 +72,7 @@ void Node::run_output_nodes_if_ready(std::shared_ptr<graph_frame::Context> conte
             if (last_ready_node != nullptr) {
                 bthread_t tid;
                 Bargs* args = new Bargs(last_ready_node, context);
-                bthread_start_background(&tid, &BTHREAD_ATTR_SMALL, b_func, args);
+                bthread_start_background(&tid, &BTHREAD_ATTR_NORMAL, b_func, args);
             }
             last_ready_node = output_node;
 

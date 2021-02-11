@@ -36,8 +36,10 @@ class GraphContext {
 		if (it == global_graph_node_name_vec_map.end()) {
 			 LOG(FATAL) << "cant't found graph_name: " << graph_name << " in global_graph_node_name_vec_map, this should not happen";
 		}
+
+		// <node_name, class_name>
 		const auto & node_name_vec = it->second;
-		// init service context
+		// create service context
         for (const auto& node_name_clazz_pair : node_name_vec) {
 		    node_service_context_map[node_name_clazz_pair.first].reset(GET_SERVICE_FACTORY(node_name_clazz_pair.second)->create_context());
 			// LOG(ERROR) << "graph_name:" << graph_name << " node_name:" << node_name_clazz_pair.first <<

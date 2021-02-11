@@ -4,6 +4,7 @@
 #include <utility>
 #include "common/context.h"
 #include "frame/graph.h"
+#include <future>
 namespace graph_frame {
 using graph_frame::Context;
 
@@ -21,6 +22,10 @@ struct FetchInfo {
     std::vector<std::string> keys;
     std::string id;
 };
+
+/**
+ * redis rpc data, 与fetchinfo 一一对应
+ */
 class RedisResultItem {
     public:
     RedisResultItem() : result_str(nullptr), code(OTHER_ERROR) {}
@@ -49,8 +54,13 @@ public:
     static const int RPC_FAILED = 1; // rpc 访问失败
     static const int OTHER_ERROR = 2; // 配置文件错误或者rpc成功但数据格式不对
 };
+
+/*
+* redis cache data, 与fetchinfo 一一对应
+*/
 class CacheDataItem {
 public:
+	// <redis_key, redis_value>
     std::unordered_map<std::string, std::pair<const char*, size_t>> data_map;
     std::shared_ptr<const FetchInfo> fetch_info_ptr;
 };
@@ -70,7 +80,7 @@ class RedisResult {
     void merge_cache_data();
 };
 typedef std::function<int(std::shared_ptr<Context>,  std::vector<std::string>&, const std::string&, const std::string&)> RedisKeyGenFunc;
-typedef std::function<int(const std::string&, const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>)> RedisDataParseFunc;
+typedef std::function<int(const std::string&, const char*, size_t, int, int, std::shared_ptr<GenericServiceContext>, std::shared_ptr<const FetchInfo>, bool)> RedisDataParseFunc;
 class RedisService : public Node {
   public:
   public:
@@ -81,7 +91,7 @@ class RedisService : public Node {
     virtual void process_response(std::shared_ptr<Context> context, const RedisResult& redis_result);
     virtual std::shared_ptr<std::string> make_redis_value(const std::string& key, std::shared_ptr<Context> context);
 
-    void parse_redis_response(const std::string& prefix, int fetch_info_index, const RedisResultItem& redis_item, std::shared_ptr<Context> context);
+    void parse_redis_response(const std::string& prefix, int fetch_info_index, int redis_item_size, const RedisResultItem& redis_item, std::shared_ptr<Context> context);
     const std::string type() override {
         return "io";
     }
@@ -96,7 +106,7 @@ class RedisService : public Node {
         if (it != parse_func_map.end()) {
             return it->second;
         }
-        static RedisDataParseFunc default_func = [](const std::string&,const char*, size_t, std::shared_ptr<Context>, std::shared_ptr<const FetchInfo>){return 1;};
+        static RedisDataParseFunc default_func = [](const std::string&,const char*, size_t, int, int, std::shared_ptr<GenericServiceContext>, std::shared_ptr<const FetchInfo>, bool){return 1;};
         return default_func;
     }
     void check_suc_rpc_response(std::shared_ptr<graph_frame::Context> context, std::shared_ptr<brpc::RedisResponse>& response,
@@ -104,6 +114,7 @@ class RedisService : public Node {
         RedisResultItem& redis_result_item, const std::string& key);
     std::shared_ptr<std::vector<std::string>> get_from_cache(std::vector<std::string>& keys, std::vector<CacheDataItem>& cache_data_vec, std::shared_ptr<const FetchInfo> fetch_info_ptr);
     void make_up_fetch_info_vec(std::shared_ptr<Context> context, std::shared_ptr<RedisResult> redis_result, std::vector<std::shared_ptr<const FetchInfo>>& fetch_info_vec);
+    void parse_cached_data(std::vector<CacheDataItem>& cache_data_vec, std::shared_ptr<Context> context, std::shared_ptr<std::promise<bool>> promise_ptr);
   protected:
     std::unordered_map<std::string, std::function<int(std::shared_ptr<Context>, const char*, size_t)>> response_func_map;
     std::vector<std::shared_ptr<const FetchInfo>> fetch_info_vec;

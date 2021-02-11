@@ -6,7 +6,7 @@ cc_binary(
         deps = [
         ':frame',
         ],
-        link_all_symbols=True
+        #link_all_symbols=True
 )
 
 cc_library(
@@ -25,6 +25,8 @@ cc_library(
         ]),
         deps = [
                 '//thirdparty/brpc:brpc',
+                '//thirdparty/shmcache:shmcache',
+                '//thirdparty/fastcommon:fastcommon',
         ],
         hdrs=[],
 )
@@ -39,7 +41,17 @@ cc_test(
             ':frame',
             '//thirdparty/gtest:gtest',
     ],
-    link_all_symbols=True
+    testdata = [
+        "unittest/graph_frame/conf/node_service.conf",
+        "unittest/graph_frame/conf/downstream.conf",
+        "unittest/graph_frame/conf/graph.conf",
+        "unittest/redis_service/conf/shmcache.conf",
+        "unittest/redis_service/conf/node_service.conf",
+        "unittest/redis_service/conf/downstream.conf",
+        "unittest/redis_service/conf/graph.conf",
+        "unittest/redis_service/conf/redis_client.conf",
+    ],
+    #link_all_symbols=True
 )
 
 #proto_library(
