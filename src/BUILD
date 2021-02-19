@@ -6,6 +6,7 @@ cc_binary(
         deps = [
         ':frame',
         ],
+        link_all_symbols=True
 )
 
 cc_library(
@@ -38,6 +39,7 @@ cc_test(
             ':frame',
             '//thirdparty/gtest:gtest',
     ],
+    link_all_symbols=True
 )
 
 #proto_library(
