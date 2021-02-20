@@ -10,7 +10,7 @@ GtransportManager& GtransportManager::instance() {
     return inst;
 }
 
-void GtransportManager::init(const std::string& conf_path) noexcept {
+bool GtransportManager::init(const std::string& conf_path) noexcept {
     // LOG(ERROR) << "downstream_map size: " << downstream_map.size();
     // std::cout << "downstream_map size: " << downstream_map.size() << std::endl;
 	hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(conf_path);
@@ -37,7 +37,7 @@ void GtransportManager::init(const std::string& conf_path) noexcept {
 
 		if (channel->Init(ns.c_str(), lb.c_str(), &options) != 0) {
              LOG(WARNING) << "Fail to initialize " << downstream_name << " channel";
-             return;
+             return false;
          }
          if (downstream_map.find(downstream_name) == downstream_map.end()) {
              LOG(WARNING) << "insert downstream: " << downstream_name << " ns: " << ns;
@@ -47,6 +47,7 @@ void GtransportManager::init(const std::string& conf_path) noexcept {
              LOG(ERROR) << "downstream" << downstream_name << " already exists! error!!";
          }
 	}
+    return true;
 }
 
 std::shared_ptr<brpc::Channel> GtransportManager::get_transport(const std::string& transport_name) {

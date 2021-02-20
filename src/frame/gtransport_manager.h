@@ -9,7 +9,7 @@ class GtransportManager {
     public:
     static GtransportManager& instance();
 
-    void init(const std::string& conf_path) noexcept;
+    bool init(const std::string& conf_path) noexcept;
 
     std::shared_ptr<brpc::Channel> get_transport(const std::string& transport_name);
     private:

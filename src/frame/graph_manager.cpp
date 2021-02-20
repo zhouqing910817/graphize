@@ -1,5 +1,7 @@
 #include "frame/graph_manager.h"
 #include "frame/node_manager.h"
+#include "frame/client/redis/redis_client_manager.h"
+#include "frame/cache_manager.h"
 #include "frame/graph.h"
 #include <boost/algorithm/string.hpp>
 #include <hocon/config.hpp>
@@ -110,12 +112,12 @@ bool GraphManager::init(const std::string& file_path) {
         auto ret = graph->init(root, graph_name);
 		if (ret == 0) {
             graph_map.insert({graph_name, graph});
-			return true;
 		} else {
 			LOG(FATAL) << "init " << graph_name << " failed, it's not a DAG";
 			return false;
 		}
 	}
+    return true;
 }
 
 std::shared_ptr<Graph> GraphManager::get_graph(const std::string& topo_name) {
@@ -126,5 +128,45 @@ std::shared_ptr<Graph> GraphManager::get_graph(const std::string& topo_name) {
     } else {
         return it->second;
     }
+}
+bool init_graph_frame(const std::string& graph_frame_file) {
+
+	hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(graph_frame_file);
+	hocon::shared_object root_obj = root_conf->root();
+    const auto& key_vec = root_obj->key_set();
+    if (std::find(key_vec.begin(), key_vec.end(), "graph_frame") == key_vec.end()) {
+        LOG(FATAL) << " graph_frame_file: " << graph_frame_file << " has not key named [graph_frame]!";
+        return false;
+    }
+    auto graph_frame_obj = root_conf->get_object("graph_frame");
+    auto graph_frame_conf = graph_frame_obj->to_config();
+
+
+    std::string shmcache_conf_file = graph_frame_conf->get_string("shmcache_conf_file");
+    int cache_init_ret = graph_frame::CacheManager::instance().init(shmcache_conf_file);
+    if (cache_init_ret != 0) {
+        LOG(FATAL) << "init shmcache failed, shmcache_conf_file:" << shmcache_conf_file << " maybe conf file modified without kill previous shmcache instance or SHMCACHMJIN SHMCACHMMAX not big enough if it's macos";
+    }
+    std::string redis_client_conf_file = graph_frame_conf->get_string("redis_client_conf_file");
+    bool suc = redis_client::RedisClientManager::instance().init(redis_client_conf_file);
+    if (!suc) {
+        LOG(FATAL) << "redis client manger init faild, redis_client_conf_file:" << redis_client_conf_file;
+        return false;
+    }
+    std::string node_service_conf_file = graph_frame_conf->get_string("node_service_conf_file");
+    
+    suc = graph_frame::NodeManager::instance().init(node_service_conf_file);
+    if (!suc) {
+        LOG(FATAL) << "node manager init failed, node_service_conf_file: " << node_service_conf_file;
+        return false;
+    }
+
+    std::string graph_conf_file = graph_frame_conf->get_string("graph_conf_file");
+    suc = graph_frame::GraphManager::instance().init(graph_conf_file);
+    if (!suc) {
+        LOG(FATAL) << "graph manager init failed, graph_conf_file: " << graph_conf_file;
+        return false;
+    }
+    return true;
 }
 } // end of namespace

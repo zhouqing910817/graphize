@@ -130,7 +130,7 @@ class Graph {
       }
 	  ss << "/********* graph: " << name << " end *********/" << std::endl;
       LOG(ERROR) <<"graph: " << name << " all_nodes size: " << all_nodes.size();
-	  LOG(ERROR) << ss.str();
+	  LOG(ERROR) << "\n" <<  ss.str();
       bool valid = check();
 	  if (valid) {
 		  return 0;

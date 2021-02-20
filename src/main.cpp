@@ -9,12 +9,8 @@
 #include "frame/node_manager.h"
 #include "common/context.h"
 #include "butil/logging.h"
-bool init_graph() {
-	// redis_client::RedisClientManager::instance().init("");
-	// graph_frame::GtransportManager::instance().init("conf/downstream.conf");
-	return graph_frame::NodeManager::instance().init("conf/node_service.conf") &&
-	graph_frame::GraphManager::instance().init("conf/graph.conf");
-
+bool init_graph(const std::string& graph_frame_file) {
+    return graph_frame::init_graph_frame(graph_frame_file);
 }
 
 void init_glog() {
@@ -30,7 +26,7 @@ int main(int argc, char* argv[]) {
 	gflags::ParseCommandLineFlags(&argc, &argv, true);
 	LOG(ERROR) << "start init graph" << std::endl;
 	init_glog();
-	bool suc = init_graph();
+	bool suc = init_graph("conf/server.conf");
 	if (!suc) {
 		return -1;
 	}

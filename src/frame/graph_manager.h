@@ -5,6 +5,9 @@
 namespace graph_frame {
 class Graph;
 class Node;
+
+bool init_graph_frame(const std::string& graph_frame_file);
+
 class GraphManager {
 private:
     GraphManager(){}
