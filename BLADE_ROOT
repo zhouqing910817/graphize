@@ -53,20 +53,18 @@ cc_config(
         '-fno-omit-frame-pointer'
     ],
     cxx_warnings = [
-        '-Wno-deprecated-declarations'
     ],
     extra_incs=[
         # for all thirdparty packages
         './src/',
-        'thirdparty/brpc/include',
+        'src/pb_include',
         '/usr/local/Cellar/openssl\@1.1/1.1.1i/include/',
-        #'/usr/local/Cellar/glog/0.4.0/include/',
         
     ],
     linkflags = [
         '-L/usr/local/lib/'
         ' -L/usr/local/Cellar/openssl\@1.1/1.1.1i/lib/',
-        #' -L/usr/local/Cellar/glog/0.4.0/lib/',
+        '-Wl,-U,--whole-archive build64_release/src/libgproto.a',
         '-Wl,-all_load',
         #' --whole-archive',
         '-pthread',
@@ -86,7 +84,8 @@ cc_config(
 #        '-ltcmalloc_and_profiler',
        #'-ljemalloc',
         #hocon conf
-        ' -lcpp-hocon -lboost_system -lboost_filesystem -lboost_locale -lboost_thread -lboost_regex  -lleatherman_util -lleatherman_locale'
+        ' -lcpp-hocon -lboost_system -lboost_filesystem -lboost_locale -lboost_thread -lboost_regex  -lleatherman_util -lleatherman_locale',
+        # for macos
         ' -framework CoreFoundation -framework CoreGraphics -framework CoreData -framework CoreText -framework Security -framework Foundation -Wl,-U,_MallocExtension_ReleaseFreeMemory -Wl,-U,_ProfilerStart -Wl,-U,_ProfilerStop -Wl,-U,_RegisterThriftProtoco '
     ],
     optimize = '-O2',
@@ -99,7 +98,7 @@ cc_test_config(
     gtest_main_libs=['thirdparty/gtest:gtest_main'],
 )
 
-#proto_library_config(
-#    protoc='thirdparty/protobuf/bin/protoc',
-#    protobuf_libs=['//thirdparty/protobuf:protobuf'],
-#)
+proto_library_config(
+    protoc='/usr/local/bin/protoc',
+    protobuf_libs=['#protobuf'],
+)

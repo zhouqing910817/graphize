@@ -32,7 +32,7 @@ public:
 TEST_F(RedisServiceUt,test_run)   //此时使用的是TEST_F宏
 {
     ASSERT_TRUE(cache_init_ret == 0);
-	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>("graph1");
+	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>("graph1", nullptr, nullptr, nullptr, nullptr);
 	sleep(1);
 }
 }

@@ -198,11 +198,11 @@ class Graph {
 };
 #define DEFINE_SERVICE_CONTEXT(ChildServiceContext) class ChildServiceContext; \
 	public: \
-    static const ChildServiceContext* get_const_context(std::shared_ptr<graph_frame::GraphContext> g_context, const std::string& node_name){ \
+    static const ChildServiceContext* get_const_context(std::shared_ptr<graph_frame::Context> g_context, const std::string& node_name){ \
         return (const ChildServiceContext*)(g_context->get_context(node_name).get()); \
      } \
     private: \
-    static ChildServiceContext* get_own_context(std::shared_ptr<graph_frame::GraphContext> g_context, const std::string& node_name) {\
+    static ChildServiceContext* get_own_context(std::shared_ptr<graph_frame::Context> g_context, const std::string& node_name) {\
 		auto cxt = g_context->get_context(node_name); \
 		/* LOG(ERROR) << "node_name:" << node_name << " get context: " << cxt.get() << "type: " << typeid(*cxt).name();*/\
         return (ChildServiceContext*)(cxt.get());\

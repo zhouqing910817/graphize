@@ -1,20 +1,20 @@
-#include "unittest/graph_frame/src/done.h"
+#include "service/done.h"
 #include "butil/time.h"
 #include "bthread/id.h"
 #include "common/context.h"
 #include <gflags/gflags.h>
 #include "frame/register.h"
 #include <functional>
-#include "unittest/graph_frame/src/start_service.h"
+#include "service/start_service.h"
 namespace rec {
 namespace service {
-SERVICE_REGISTER(UtDoneService);
-void UtDoneService::init(hocon::shared_config config) {
+SERVICE_REGISTER(DoneService);
+void DoneService::init(hocon::shared_config config) {
 
 }
-int UtDoneService::do_service(std::shared_ptr<graph_frame::Context> context) {
+int DoneService::do_service(std::shared_ptr<graph_frame::Context> context) {
 	LOG(ERROR) << "do DoneService ...";
-	auto start_service_context = UtStartService::get_const_context(context, "start");
+	auto start_service_context = StartService::get_const_context(context, "start");
 	LOG(ERROR) << "done service read request_id:" << start_service_context->request_id;
 
     return 0;

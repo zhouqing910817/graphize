@@ -6,6 +6,14 @@
 #include <vector>
 #include "frame/register.h"
 #include <typeinfo>
+namespace brpc {
+class Controller;
+}
+namespace google {
+namespace protobuf {
+class Closure;
+}
+}
 namespace graph_frame {
 class GenericServiceContext;
 class Node;
@@ -15,10 +23,21 @@ class GenericServiceContext {
 	public:
 	int64_t lat = -1;
 };
+
+template<typename Request, typename Response>
 class GraphContext {
-    public:
+    
+private:
+    friend class Graph;
+    friend class RedisService;
+    friend class Node;
     std::unordered_map<Node*, std::shared_ptr<std::atomic<int>>> node_input_num_map;
     std::unordered_map<std::string, std::shared_ptr<GenericServiceContext>> node_service_context_map;
+	std::string graph_name;
+    const Request* request;
+    Response * response;
+
+public:
 
 	std::shared_ptr<GenericServiceContext> get_context(const std::string& node_name) {
 		auto it = node_service_context_map.find(node_name);
@@ -30,7 +49,7 @@ class GraphContext {
 		}
 		return node_service_context_map[node_name];
 	}
-	GraphContext(const std::string& graph_name) : graph_name(graph_name) {
+	GraphContext(const std::string& graph_name, const Request* req, Response* resp,brpc::Controller* cntl, google::protobuf::Closure* closure) : graph_name(graph_name), request(req), response(resp) {
 		auto it = global_graph_node_name_vec_map.find(graph_name);
 		
 		if (it == global_graph_node_name_vec_map.end()) {
@@ -46,7 +65,5 @@ class GraphContext {
 			//	   	" class_name: " << node_name_clazz_pair.second << " create context" << " type: " << typeid(*node_service_context_map[node_name_clazz_pair.first]).name();
 		}
 	}
-	private:
-	std::string graph_name;
 };
 } // end of namespace

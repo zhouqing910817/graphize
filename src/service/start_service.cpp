@@ -1,4 +1,4 @@
-#include "unittest/graph_frame/src/start_service.h"
+#include "service/start_service.h"
 #include "butil/time.h"
 #include "bthread/id.h"
 #include "common/context.h"
@@ -7,13 +7,13 @@
 #include <functional>
 namespace rec {
 namespace service {
-SERVICE_REGISTER(UtStartService);
-void UtStartService::init(hocon::shared_config config) {
+SERVICE_REGISTER(StartService);
+void StartService::init(hocon::shared_config config) {
 	//初始化配置文件，进程级别数据 
 	func = config->get_string("func");
 
 }
-int UtStartService::do_service(std::shared_ptr<graph_frame::Context> context) {
+int StartService::do_service(std::shared_ptr<graph_frame::Context> context) {
 	LOG(ERROR) << "do service : " << func << " node_name: " << name;
 	auto start_service_context = GET_OWN_CONTEXT();
 	// LOG(ERROR) << "start_service_context: " << start_service_context;
