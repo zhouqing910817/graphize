@@ -28,13 +28,11 @@ struct FetchInfo {
  */
 class RedisResultItem {
     public:
-    RedisResultItem() : result_str(nullptr), code(OTHER_ERROR) {}
-    RedisResultItem(const char* result_str, std::shared_ptr<brpc::RedisResponse> result_guard, int code, const std::string& error_msg):
-    result_str(result_str), result_guard(result_guard), code(code), error_msg(error_msg) {}
+    RedisResultItem() : code(OTHER_ERROR) {}
+    RedisResultItem(std::shared_ptr<brpc::RedisResponse> result_guard, int code, const std::string& error_msg):
+    result_guard(result_guard), code(code), error_msg(error_msg) {}
 
     std::shared_ptr<const FetchInfo> fetch_info_ptr; // to performance
-    std::string key; // get 时使用
-    const char* result_str; // get 时使用
     std::vector<const char*> result_str_vec;
     std::vector<size_t> result_str_len_vec;
     uint64_t total_result_str_size = 0; // 用于监控日志
@@ -43,7 +41,6 @@ class RedisResultItem {
     std::shared_ptr<brpc::Controller> cntl_ptr;
     int code;
     std::string error_msg;
-    const char* data() {return result_str;}
     int error_code() {return code;};
     std::string err_msg() {return error_msg;};
 
