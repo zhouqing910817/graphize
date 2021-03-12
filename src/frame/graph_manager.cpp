@@ -123,7 +123,7 @@ bool GraphManager::init(const std::string& file_path) {
 std::shared_ptr<Graph> GraphManager::get_graph(const std::string& topo_name) {
     auto it = graph_map.find(topo_name);
     if (it == graph_map.end()) {
-		LOG(FATAL) << "graph: " << topo_name << " not found";
+        LOG(FATAL) << "graph: " << topo_name << " not found";
         return std::shared_ptr<Graph>();
     } else {
         return it->second;

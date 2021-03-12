@@ -1,7 +1,7 @@
 #include <gflags/gflags.h>
 #include <butil/logging.h>
 #include <brpc/server.h>
-#include "echo.pb.h"
+#include "proto/echo.pb.h"
 
 namespace example {
 class EchoServiceImpl : public EchoService {

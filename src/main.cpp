@@ -18,6 +18,7 @@ bool init_graph(const std::string& graph_frame_file) {
 }
 
 void init_glog(const std::string& log_path) {
+
 // 	using namespace logging;
 // 
 //     ::logging::LoggingSettings log_setting;  // 创建LoggingSetting对象进行设置
