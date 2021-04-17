@@ -59,6 +59,7 @@ cc_config(
         './src/',
         'src/pb_include',
         '/usr/local/Cellar/openssl\@1.1/1.1.1i/include/',
+        '/Users/zhouqing/pc/project/graphize/src/output/',
         
     ],
     linkflags = [

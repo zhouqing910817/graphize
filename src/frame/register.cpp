@@ -11,7 +11,7 @@ std::unordered_map<std::string, ServiceFactory*> global_service_map;
 	// 	   	<< " ::graph_frame::global_service_map size: " << ::graph_frame::global_service_map.size() << std::endl;
 	auto it = ::graph_frame::global_service_map.find(ServiceClassName);
 	if (it == ::graph_frame::global_service_map.end()) {
-		LOG(FATAL) << "ServiceClassName: " << ServiceClassName << " not found in global_service_map";
+		LOG(FATAL) << "addr:" << &::graph_frame::global_service_map << " ServiceClassName: " << ServiceClassName << " not found in global_service_map size:" << ::graph_frame::global_service_map.size();
 	} else {
 		return it->second;
 	}

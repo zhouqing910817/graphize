@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 #include "butil/logging.h"
+#include <iostream>
 namespace graph_frame {
 class Node;
 class GenericServiceContext;
@@ -29,7 +30,8 @@ class ServiceClass##Register { \
 public: \
 ServiceClass##Register() { \
     ::graph_frame::global_service_map.insert({#ServiceClass, new ServiceClass##Factory()}); \
-	/*LOG(INFO) << "register class: " << &::graph_frame::global_service_map << " " << #ServiceClass << "size:" << ::graph_frame::global_service_map.size() << std::endl;*/ \
+	LOG(ERROR) << "register class: " << &::graph_frame::global_service_map << " " << #ServiceClass << "size:" << ::graph_frame::global_service_map.size() << std::endl; \
+	std::cout << "register class: " << &::graph_frame::global_service_map << " " << #ServiceClass << "size:" << ::graph_frame::global_service_map.size() << std::endl; \
 } \
 }; \
 static ServiceClass##Register ServiceClass##_inst_;

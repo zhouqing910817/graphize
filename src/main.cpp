@@ -12,33 +12,45 @@
 #include <brpc/server.h>
 #include "echo.pb.h"
 #include "server/server_impl.h"
+#include <boost/filesystem.hpp>
 
 bool init_graph(const std::string& graph_frame_file) {
     return graph_frame::init_graph_frame(graph_frame_file);
 }
 
-void init_glog(const std::string& log_path) {
 
-//     using namespace logging;
-// 
-//     ::logging::LoggingSettings log_setting;  // 创建LoggingSetting对象进行设置
-//     log_setting.log_file = log_path.c_str(); // 设置日志路径
-//     log_setting.logging_dest = logging::LOG_TO_FILE; // 设置日志写到文件，不写的话不生效
-//     ::logging::InitLogging(log_setting);     // 应用日志设置
+void init_glog(const char* app_name, const std::string& log_path) {
+    using namespace google;
+    FLAGS_logtostderr = 0;
+    google::InitGoogleLogging(app_name);
+    FLAGS_log_dir = "./log/";
+    google::SetLogDestination(ERROR, (FLAGS_log_dir + std::string(app_name) + std::string(".error")).c_str());
+    google::SetLogDestination(INFO, (FLAGS_log_dir + std::string(app_name) + std::string(".info")).c_str());
+    google::SetLogDestination(WARNING, (FLAGS_log_dir + std::string(app_name) + std::string(".warning")).c_str());
 }
 int main(int argc, char* argv[]) {
-    gflags::ParseCommandLineFlags(&argc, &argv, true);
-    LOG(ERROR) << "start init graph" << std::endl;
+	gflags::ParseCommandLineFlags(&argc, &argv, true);
     std::string server_conf_file = "conf/server.conf";
 
     hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(server_conf_file);
     hocon::shared_object root_obj = root_conf->root();
     std::string log_path = root_conf->get_string("log_path");
-    init_glog(log_path);
-    bool suc = init_graph("conf/server.conf");
+    bool suc = init_graph(server_conf_file);
     if (!suc) {
         return -1;
     }
+
+    FLAGS_logtostderr = 1;
+    FLAGS_log_dir = "./log";
+    if(!boost::filesystem::exists(log_path)) {
+        boost::filesystem::create_directories(log_path);
+    }
+
+	init_glog(argv[0], log_path);
+	bool suc = init_graph("conf/server.conf");
+	if (!suc) {
+		return -1;
+	}
     int port = root_conf->get_int("port");
     
     // Generally you only need one Server.

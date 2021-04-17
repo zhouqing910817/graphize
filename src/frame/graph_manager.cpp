@@ -165,7 +165,7 @@ bool init_graph_frame(const std::string& graph_frame_file) {
     std::string shmcache_conf_file = graph_frame_conf->get_string("shmcache_conf_file");
     int cache_init_ret = graph_frame::CacheManager::instance().init(shmcache_conf_file);
     if (cache_init_ret != 0) {
-        LOG(FATAL) << "init shmcache failed, shmcache_conf_file:" << shmcache_conf_file << " maybe conf file modified without kill previous shmcache instance or SHMCACHMJIN SHMCACHMMAX not big enough if it's macos";
+        LOG(ERROR) << "init shmcache failed, shmcache_conf_file:" << shmcache_conf_file << " maybe conf file modified without kill previous shmcache instance or SHMCACHMJIN SHMCACHMMAX not big enough if it's macos";
     }
     std::string redis_client_conf_file = graph_frame_conf->get_string("redis_client_conf_file");
     bool suc = redis_client::RedisClientManager::instance().init(redis_client_conf_file);
