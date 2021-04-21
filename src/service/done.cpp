@@ -14,8 +14,9 @@ void DoneService::init(hocon::shared_config config) {
 }
 int DoneService::do_service(std::shared_ptr<graph_frame::Context> context) {
 	LOG(ERROR) << "do DoneService ...";
-	auto start_service_context = StartService::get_const_context(context, "start");
-	LOG(ERROR) << "done service read request_id:" << start_service_context->request_id;
+	auto start_service_context = StartService::get_const_context(context, context->start_context);
+        LOG(ERROR) << "name:" << name << " id:" << id;
+	LOG(ERROR) << "done service read request_id:" << start_service_context->request_id << " start_service_context:" << start_service_context;
 
     return 0;
 }

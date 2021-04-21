@@ -31,7 +31,8 @@ TEST_F(GraphUt,test_run_graph)   //此时使用的是TEST_F宏
 {
 	ASSERT_TRUE(init_node_suc);
 	ASSERT_TRUE(init_graph_suc);
-	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>("graph1", nullptr, nullptr,nullptr,nullptr);
+	graph_frame::GraphManager::instance().get_graph("graph1")->run<graph_frame::Context>(nullptr, nullptr,nullptr,nullptr);
+	graph_frame::GraphManager::instance().get_graph("graph2")->run<graph_frame::Context>(nullptr, nullptr,nullptr,nullptr);
 	sleep(1);
 
 }

@@ -351,7 +351,7 @@ void RedisService::parse_cached_data(std::vector<CacheDataItem>& cache_data_vec,
                 std::string uncompress_data_str = "";
                 uncompress_data_str.reserve(result_str_len * 6); // snappy compress ratio is 22%, so mutilpy by 6
                 auto ok = butil::snappy::Uncompress(result_str, result_str_len, &uncompress_data_str);
-                auto service_context = context->node_service_context_map[name];
+                auto service_context = context->get_context(id);
                 const std::string& prefix = fetch_info->prefix;
                 auto suc = parse_func(key, uncompress_data_str.c_str(), uncompress_data_str.size(), 0, 1, service_context, fetch_info, true);
                 if (!suc) {
@@ -364,7 +364,7 @@ void RedisService::parse_cached_data(std::vector<CacheDataItem>& cache_data_vec,
                 const auto& data_pair = pair.second;
                 const char* result_str = data_pair.first;
                 auto result_str_len = data_pair.second;
-                auto service_context = context->node_service_context_map[name];
+                auto service_context = context->get_context(id);
                 const std::string& prefix = fetch_info->prefix;
                 auto suc = parse_func(key, result_str, result_str_len, 0, 1, service_context, fetch_info, true);
                 if (!suc) {
@@ -450,7 +450,7 @@ void RedisService::check_suc_rpc_response(std::shared_ptr<graph_frame::Context> 
 }
 void RedisService::parse_redis_response(const std::string& prefix, int redis_item_index, int redis_item_size, const RedisResultItem& redis_item, std::shared_ptr<Context> context) {
     auto parse_func = get_parse_func(redis_item.fetch_info_ptr->response_func);
-    auto service_context = context->node_service_context_map[name];
+    auto service_context = context->get_context(id);
     if (redis_item.fetch_info_ptr->compress == "snappy") {
         for (size_t i = 0; i < redis_item.result_str_vec.size(); ++i) {
             const char* result_str = redis_item.result_str_vec[i];

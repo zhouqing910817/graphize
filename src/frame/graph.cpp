@@ -4,18 +4,18 @@ namespace graph_frame {
 DEFINE_bool(run_graph_debug, false, "debug if the graph run is configured");
 static void* b_func(void * args_tmp) {
     Bargs* args = (Bargs*)args_tmp;
-	if (FLAGS_run_graph_debug) {
+    if (FLAGS_run_graph_debug) {
         LOG(ERROR) << " bthread run output node: " << args->node->get_name().c_str();
-	}
+    }
     args->node->run(args->context);
     delete args;
     return nullptr;
 }
 void Node::run(std::shared_ptr<graph_frame::Context> context) {
     if (!skip(context)) {
-	    if (FLAGS_run_graph_debug) {
+        if (FLAGS_run_graph_debug) {
             LOG(ERROR) << " bthread run output node: " << name;
-		}
+        }
         do_service(context);
         // io nodes call run_output_nodes_if_ready themselves
         if (type() == std::string("cpu")) {
@@ -24,7 +24,7 @@ void Node::run(std::shared_ptr<graph_frame::Context> context) {
     } else {
         if (FLAGS_run_graph_debug) {
             LOG(ERROR) << "skip " << name;
-		}
+        }
         run_output_nodes_if_ready(context);
     }
 }
@@ -36,23 +36,22 @@ bool Node::skip(std::shared_ptr<graph_frame::Context> context) {
     return false;
 }
 bool Node::notify(std::shared_ptr<graph_frame::Context> context) {
-    auto it = context->node_input_num_map.find(this);
-    if (it == context->node_input_num_map.end()) {
-		LOG(ERROR) << "node:" << this << " not found in node_input_num_map, this should not happen";
+    if (id >= context->node_input_num_map.size()) {
+    LOG(FATAL) << "node:" << this << " not found in node_input_num_map, this should not happen";
         return false;
     }
-    auto input_num = it->second;
+    auto input_num = context->node_input_num_map[id];
     int old_value = input_num->fetch_sub(1);
-	if (FLAGS_run_graph_debug) {
+    if (FLAGS_run_graph_debug) {
         LOG(ERROR) << name << " notified; " << " old_value: " << old_value;
-	}
+    }
     if (old_value == 1) {
         return true;
     } else if (old_value <= 0) {
-		if (FLAGS_run_graph_debug) {
-		    LOG(ERROR) << "too many notify, old_value: " << old_value << ", this should not happen";
-		}
-    } 
+        if (FLAGS_run_graph_debug) {
+            LOG(ERROR) << "too many notify, old_value: " << old_value << ", this should not happen";
+        }
+    }
     return false;
 }
 void Node::run_output_nodes_if_ready(std::shared_ptr<graph_frame::Context> context) {
@@ -60,14 +59,14 @@ void Node::run_output_nodes_if_ready(std::shared_ptr<graph_frame::Context> conte
     Node* last_ready_node = nullptr;
     for (size_t i = 0; i < out_nodes.size(); i++) {
         auto output_node = out_nodes[i];
-		if (FLAGS_run_graph_debug) {
+        if (FLAGS_run_graph_debug) {
             LOG(ERROR) << name << " notify " << output_node->get_name();
-		}
+        }
         auto ready = output_node->notify(context);
         if (ready) {
-			if (FLAGS_run_graph_debug) {
+            if (FLAGS_run_graph_debug) {
                 LOG(ERROR) << output_node->get_name() << " is ready";
-			}
+            }
             ++ready_nodes_num;
             if (last_ready_node != nullptr) {
                 bthread_t tid;

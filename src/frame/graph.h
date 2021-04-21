@@ -27,9 +27,14 @@ struct Bargs {
     Node* node;
     std::shared_ptr<graph_frame::Context> context;
 };
+class ServiceFactory; // defined in register.h
+class Graph;
 class Node {
     public:
-	#define GET_OWN_CONTEXT() get_own_context(context, name);
+    friend class GraphManager;
+    friend class Graph;
+    public:
+	#define GET_OWN_CONTEXT() get_own_context(context, id);
     Node(const std::string& name = "") : name(name){
     }
     virtual int do_service(std::shared_ptr<graph_frame::Context> context);
@@ -70,17 +75,19 @@ class Node {
     virtual const std::string type() {
         return "cpu";
     }
-	int input_num_4_check = 0;
+    int input_num_4_check = 0;
     private:
+    ServiceFactory* service_context_factory;
     int input_num = 0;
     std::vector<Node*> out_nodes;
-	public:
+    public:
+    int id;
     std::string name;
-    
-
 };
 
 class Graph {
+  public:
+  int max_node_id;
   private:
   Node* root_node = nullptr;
   std::vector<Node*> all_nodes;
@@ -109,7 +116,7 @@ class Graph {
       std::queue<Node*> q;
       q.push(cur_node);
       std::set<Node*> set;
-	  std::stringstream ss;
+      std::stringstream ss;
       ss << "/********* graph: " << name << " *********/" << std::endl;
       while(!q.empty()) {
           cur_node = q.front();
@@ -128,9 +135,9 @@ class Graph {
               q.push(node);
           }
       }
-	  ss << "/********* graph: " << name << " end *********/" << std::endl;
+      ss << "/********* graph: " << name << " end *********/" << std::endl;
       LOG(ERROR) <<"graph: " << name << " all_nodes size: " << all_nodes.size();
-	  LOG(ERROR) << "\n" <<  ss.str();
+      LOG(ERROR) << "\n" <<  ss.str();
       bool valid = check();
 	  if (valid) {
 		  return 0;
@@ -178,18 +185,26 @@ class Graph {
   int run(Args... args) {
       // 1. 构造图的上下文
       auto context = std::make_shared<Context>(std::forward<Args>(args)...);
+      context->set_graph_name(name);
       if (root_node == nullptr) {
           LOG(ERROR) << "root_node is nullptr";
           return -1;
       }
+      if (all_nodes.size() <= 0) {
+          LOG(FATAL) << "nodes num <=0, graph name:" << name;
+      }
+      context->node_input_num_map.resize(all_nodes.size());
+      context->node_service_context_vec.resize(max_node_id + 1);
       for (auto node : all_nodes) {
-          auto it = context->node_input_num_map.find(node);
-          if (it == context->node_input_num_map.end()) {
-              context->node_input_num_map[node] = std::make_shared<std::atomic<int>>(node->get_input_num());
-			  if (FLAGS_run_graph_debug) {
-                  LOG(ERROR) << "node: " << node->get_name() << " input_num:" << context->node_input_num_map[node]->load();
-			  }
+          if (node->id >= context->node_input_num_map.size()) {
+              LOG(FATAL) << "error node->id:" << node->id << " >= node_input_num_map.size:" << context->node_input_num_map.size();
           }
+          context->node_input_num_map[node->id] = std::make_shared<std::atomic<int>>(node->get_input_num());
+          if (FLAGS_run_graph_debug) {
+              LOG(ERROR) << "node: " << node->get_name() << " input_num:" << context->node_input_num_map[node->id]->load();
+          }
+          context->node_service_context_vec[node->id].reset(node->service_context_factory->create_context());
+          LOG(ERROR) << "create context for node id:" << node->id << " node_service_context:" << context->node_service_context_vec[node->id].get();
       }
       // 2. run
       root_node->run(context);
@@ -198,12 +213,12 @@ class Graph {
 };
 #define DEFINE_SERVICE_CONTEXT(ChildServiceContext) class ChildServiceContext; \
 	public: \
-    static const ChildServiceContext* get_const_context(std::shared_ptr<graph_frame::Context> g_context, const std::string& node_name){ \
-        return (const ChildServiceContext*)(g_context->get_context(node_name).get()); \
+    static const ChildServiceContext* get_const_context(std::shared_ptr<graph_frame::Context> g_context, int id){ \
+        return (const ChildServiceContext*)(g_context->get_context(id).get()); \
      } \
     private: \
-    static ChildServiceContext* get_own_context(std::shared_ptr<graph_frame::Context> g_context, const std::string& node_name) {\
-		auto cxt = g_context->get_context(node_name); \
+    static ChildServiceContext* get_own_context(std::shared_ptr<graph_frame::Context> g_context, int id) {\
+		auto cxt = g_context->get_context(id); \
 		/* LOG(ERROR) << "node_name:" << node_name << " get context: " << cxt.get() << "type: " << typeid(*cxt).name();*/\
         return (ChildServiceContext*)(cxt.get());\
     }\

@@ -31,39 +31,24 @@ private:
     friend class Graph;
     friend class RedisService;
     friend class Node;
-    std::unordered_map<Node*, std::shared_ptr<std::atomic<int>>> node_input_num_map;
-    std::unordered_map<std::string, std::shared_ptr<GenericServiceContext>> node_service_context_map;
-	std::string graph_name;
+    std::vector<std::shared_ptr<std::atomic<int>>> node_input_num_map;
+    std::vector<std::shared_ptr<GenericServiceContext>> node_service_context_vec;
+    std::string graph_name;
     const Request* request;
     Response * response;
 
 public:
+void set_graph_name(const std::string& graph_name) {
+    this->graph_name = graph_name;
+}
 
-	std::shared_ptr<GenericServiceContext> get_context(const std::string& node_name) {
-		auto it = node_service_context_map.find(node_name);
-		if (it != node_service_context_map.end()) {
-			// LOG(ERROR) << "found service context for node: " << node_name << " context: " << it->second.get();
-			return it->second;
-		} else {
-			LOG(FATAL) << "can't found service context for node:" << node_name << " this should not be happen";
-		}
-		return node_service_context_map[node_name];
-	}
-	GraphContext(const std::string& graph_name, const Request* req, Response* resp,brpc::Controller* cntl, google::protobuf::Closure* closure) : graph_name(graph_name), request(req), response(resp) {
-		auto it = global_graph_node_name_vec_map.find(graph_name);
-		
-		if (it == global_graph_node_name_vec_map.end()) {
-			 LOG(FATAL) << "cant't found graph_name: " << graph_name << " in global_graph_node_name_vec_map, this should not happen";
-		}
-
-		// <node_name, class_name>
-		const auto & node_name_vec = it->second;
-		// create service context
-        for (const auto& node_name_clazz_pair : node_name_vec) {
-		    node_service_context_map[node_name_clazz_pair.first].reset(GET_SERVICE_FACTORY(node_name_clazz_pair.second)->create_context());
-			// LOG(ERROR) << "graph_name:" << graph_name << " node_name:" << node_name_clazz_pair.first <<
-			//	   	" class_name: " << node_name_clazz_pair.second << " create context" << " type: " << typeid(*node_service_context_map[node_name_clazz_pair.first]).name();
-		}
-	}
+std::shared_ptr<GenericServiceContext> get_context(int node_id) {
+        if (node_id >= node_service_context_vec.size()) {
+            LOG(FATAL) << "wrong node_id:" << node_id << ", node_service_context_vec.size():" << node_service_context_vec.size();
+        }
+	return node_service_context_vec[node_id];
+}
+GraphContext(const std::string& graph_name, const Request* req, Response* resp,brpc::Controller* cntl, google::protobuf::Closure* closure) : graph_name(graph_name), request(req), response(resp) {
+}
 };
 } // end of namespace

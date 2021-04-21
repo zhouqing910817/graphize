@@ -15,8 +15,13 @@ using namespace google;
 
 class Context : public graph_frame::GraphContext<example::EchoRequest, example::EchoResponse> {
 public:
-    Context(const std::string& graph_name, const example::EchoRequest* req, example::EchoResponse* resp, brpc::Controller* cntl, google::protobuf::Closure* closure);
+    Context(const example::EchoRequest* req, example::EchoResponse* resp, brpc::Controller* cntl, google::protobuf::Closure* closure);
     virtual ~Context();
+public:
+    int start_context;
+    int mid1_context;
+    int mid2_context;
+    int done_context;
 };
 
 }

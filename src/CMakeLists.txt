@@ -8,16 +8,17 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/
                    ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/fastcommon/include 
                    ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/shmcache/include
                    ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/gtest/include 
-                  /usr/local/Cellar/openssl\@1.1/1.1.1j/include/
+                  /usr/local/Cellar/openssl\@1.1/1.1.1k/include/
                   ${CMAKE_CURRENT_SOURCE_DIR}/proto
 )
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/brpc/lib64
                  ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/shmcache/lib64
                  ${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/fastcommon/lib64
-                  /usr/local/Cellar/openssl\@1.1/1.1.1j/lib/
+                  /usr/local/Cellar/openssl\@1.1/1.1.1k/lib/
                   /usr/local/lib
                  /usr/lib
 )
+SET(CMAKE_EXE_LINKER_FLAGS "-Wl,-all_load")
 file(GLOB client_src "frame/client/*/*.cpp")
 file(GLOB frame_src "frame/*.cpp")
 file(GLOB common_src "common/*.cpp")

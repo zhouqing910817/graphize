@@ -25,7 +25,7 @@ void EchoServiceImpl::Echo(google::protobuf::RpcController* cntl_base,
               << ": " << request->message()
               << " (attached=" << cntl->request_attachment() << ")";
     std::string graph_name = "graph1";
-    graph_frame::GraphManager::instance().get_graph(graph_name)->run<graph_frame::Context>(graph_name, request, response, cntl, done);
+    graph_frame::GraphManager::instance().get_graph(graph_name)->run<graph_frame::Context>(request, response, cntl, done);
     done_guard.release();
 
 }
