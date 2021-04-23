@@ -19,7 +19,7 @@ bool init_graph(const std::string& graph_frame_file) {
 
 void init_glog(const std::string& log_path) {
 
-// 	using namespace logging;
+//     using namespace logging;
 // 
 //     ::logging::LoggingSettings log_setting;  // 创建LoggingSetting对象进行设置
 //     log_setting.log_file = log_path.c_str(); // 设置日志路径
@@ -27,18 +27,18 @@ void init_glog(const std::string& log_path) {
 //     ::logging::InitLogging(log_setting);     // 应用日志设置
 }
 int main(int argc, char* argv[]) {
-	gflags::ParseCommandLineFlags(&argc, &argv, true);
-	LOG(ERROR) << "start init graph" << std::endl;
+    gflags::ParseCommandLineFlags(&argc, &argv, true);
+    LOG(ERROR) << "start init graph" << std::endl;
     std::string server_conf_file = "conf/server.conf";
 
-	hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(server_conf_file);
-	hocon::shared_object root_obj = root_conf->root();
+    hocon::shared_config root_conf = hocon::config::parse_file_any_syntax(server_conf_file);
+    hocon::shared_object root_obj = root_conf->root();
     std::string log_path = root_conf->get_string("log_path");
-	init_glog(log_path);
-	bool suc = init_graph("conf/server.conf");
-	if (!suc) {
-		return -1;
-	}
+    init_glog(log_path);
+    bool suc = init_graph("conf/server.conf");
+    if (!suc) {
+        return -1;
+    }
     int port = root_conf->get_int("port");
     
     // Generally you only need one Server.
@@ -55,10 +55,14 @@ int main(int argc, char* argv[]) {
         LOG(ERROR) << "Fail to add service";
         return -1;
     }
-
+    auto p = root_conf->get_int("cores_multi");
+    if (p == 0) {
+        LOG(ERROR) << "cores_multi should not be 0";
+    }
     // Start the server.
     brpc::ServerOptions options;
     options.idle_timeout_sec = 600;
+    options.num_threads = std::thread::hardware_concurrency() * p;
     if (server.Start(port, &options) != 0) {
         LOG(ERROR) << "Fail to start EchoServer";
         return -1;
