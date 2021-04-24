@@ -47,10 +47,6 @@ int main(int argc, char* argv[]) {
     }
 
 	init_glog(argv[0], log_path);
-	bool suc = init_graph("conf/server.conf");
-	if (!suc) {
-		return -1;
-	}
     int port = root_conf->get_int("port");
     
     // Generally you only need one Server.
